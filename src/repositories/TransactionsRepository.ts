@@ -6,6 +6,12 @@ interface Balance {
   total: number;
 }
 
+interface CreateTransactionDTO {
+  title: string;
+  type: 'income' | 'outcome';
+  value: number;
+}
+
 class TransactionsRepository {
   private transactions: Transaction[];
 
@@ -14,15 +20,34 @@ class TransactionsRepository {
   }
 
   public all(): Transaction[] {
-    // TODO
+    return this.transactions;
   }
 
   public getBalance(): Balance {
-    // TODO
+    const { income, outcome } = this.transactions.reduce(
+      (acc, t) => ({ ...acc, [t.type]: acc[t.type] + t.value }),
+      { income: 0, outcome: 0 },
+    );
+
+    return {
+      income,
+      outcome,
+      total: income - outcome,
+    };
   }
 
-  public create(): Transaction {
-    // TODO
+  public create(data: CreateTransactionDTO): Transaction {
+    const { total } = this.getBalance();
+
+    if (data.type === 'outcome' && data.value > total) {
+      throw new Error('Cannot withdraw more than current balance');
+    }
+
+    const transaction = new Transaction(data);
+
+    this.transactions.push(transaction);
+
+    return transaction;
   }
 }
 
